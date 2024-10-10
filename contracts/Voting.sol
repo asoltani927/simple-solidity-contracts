@@ -3,6 +3,18 @@ pragma solidity ^0.8.24;
 
 error AccessForbidden();
 
+// inheritance and virtual and ovverride methods
+// super contractor
+
+
+// IA
+// call by abi
+// staticcall
+
+// indexed
+
+//define library
+
 contract Voting {
 
     event VotedEvent(string candidate, address voter) anonymous; 
