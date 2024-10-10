@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+error AccessForbidden();
+
 contract Voting {
+
+    event VotedEvent(string candidate, address voter) anonymous; 
+
+    address private owner;
+
     string[] public candidates;
 
     mapping(string => uint256) public votes;
@@ -11,9 +18,15 @@ contract Voting {
     mapping(address => bool) public hasVoted;
 
     constructor(string[] memory _candidateNames) {
+        owner = msg.sender;
         candidates = _candidateNames;
     }
 
+    modifier OnlyOwner {
+        require(!(msg.sender == owner), AccessForbidden());
+        _;
+    }
+    
     function vote(string memory candidate) public {
         // Ensure that the signer hasn't voted before
         require(!hasVoted[msg.sender], "you have already voted");
@@ -34,6 +47,7 @@ contract Voting {
         votes[candidate]++;
         voters[msg.sender] = candidate;
         hasVoted[msg.sender] = true;
+        emit VotedEvent(candidate, msg.sender);
     }
 
     // Function to get the vote count of a candidate
@@ -59,6 +73,25 @@ contract Voting {
                 winnerName = candidates[i];
                 winnerVoteCounts = votes[candidates[i]];
             }
+        }
+    }
+
+    function resetVoting() external OnlyOwner {
+        // Reset voters mapping
+        for (uint i = 0; i < candidates.length; i++) {
+            address voter = address(uint160(uint256(keccak256(abi.encodePacked(candidates[i])))));
+            delete voters[voter];
+        }
+
+        // Reset votes mapping
+        for (uint i = 0; i < candidates.length; i++) {
+            delete votes[candidates[i]];
+        }
+
+        // Reset hasVoted mapping
+        for (uint i = 0; i < candidates.length; i++) {
+            address voter = address(uint160(uint256(keccak256(abi.encodePacked(candidates[i])))));
+            delete hasVoted[voter];
         }
     }
 }
