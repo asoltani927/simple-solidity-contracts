@@ -11,13 +11,16 @@ error AccessForbidden();
 // call by abi
 // staticcall
 
-// indexed
 
-//define library
+library GiftCalculator {
+    function calculateGift(uint256 amount) public pure returns (uint256) {
+        return amount * 2;
+    }
+}
 
 contract Voting {
 
-    event VotedEvent(string candidate, address voter) anonymous; 
+    event VotedEvent(string indexed candidate, address voter) anonymous; 
 
     address private owner;
 
@@ -60,6 +63,8 @@ contract Voting {
         voters[msg.sender] = candidate;
         hasVoted[msg.sender] = true;
         emit VotedEvent(candidate, msg.sender);
+        uint256 giftAmount  = GiftCalculator.calculateGift(100);
+        payable(msg.sender).transfer(giftAmount);
     }
 
     // Function to get the vote count of a candidate
