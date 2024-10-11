@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "./VotingUtils.sol";
+
 error AccessForbidden();
 
 // inheritance and virtual and ovverride methods
@@ -12,13 +15,7 @@ error AccessForbidden();
 // staticcall
 
 
-library GiftCalculator {
-    function calculateGift(uint256 amount) public pure returns (uint256) {
-        return amount * 2;
-    }
-}
-
-contract Voting {
+contract Voting is Initializable {
 
     event VotedEvent(string indexed candidate, address voter) anonymous; 
 
@@ -32,7 +29,7 @@ contract Voting {
 
     mapping(address => bool) public hasVoted;
 
-    constructor(string[] memory _candidateNames) {
+    function initialize(string[] memory _candidateNames) public initializer {
         owner = msg.sender;
         candidates = _candidateNames;
     }
@@ -60,17 +57,11 @@ contract Voting {
         require(isValidCandidate, "Invalid candidate.");
 
         votes[candidate]++;
-        voters[msg.sender] = candidate;
-        hasVoted[msg.sender] = true;
         emit VotedEvent(candidate, msg.sender);
-        uint256 giftAmount  = GiftCalculator.calculateGift(100);
-        payable(msg.sender).transfer(giftAmount);
     }
 
     // Function to get the vote count of a candidate
-    function getVoteCount(
-        string memory candidate
-    ) external view returns (uint256) {
+    function getVoteCount(string memory candidate) external view returns (uint256) {
         return votes[candidate];
     }
 
@@ -79,36 +70,36 @@ contract Voting {
         return hasVoted[voter];
     }
 
-    function winner()
-        external
-        view
-        returns (string memory winnerName, uint256 winnerVoteCounts)
-    {
-        winnerVoteCounts = 0;
+    function winner() external view returns (string memory) {
+        string memory winningCandidate;
+        uint256 highestVotes = 0;
         for (uint i = 0; i < candidates.length; i++) {
-            if (votes[candidates[i]] > 0 && votes[candidates[i]] > winnerVoteCounts) {
-                winnerName = candidates[i];
-                winnerVoteCounts = votes[candidates[i]];
+            if (votes[candidates[i]] > highestVotes) {
+                highestVotes = votes[candidates[i]];
+                winningCandidate = candidates[i];
             }
         }
+        return winningCandidate;
     }
 
     function resetVoting() external OnlyOwner {
-        // Reset voters mapping
+        for (uint i = 0; i < candidates.length; i++) {
+            votes[candidates[i]] = 0;
+        }
+        for (uint i = 0; i < candidates.length; i++) {
+            votes[candidates[i]] = 0;
+        }
         for (uint i = 0; i < candidates.length; i++) {
             address voter = address(uint160(uint256(keccak256(abi.encodePacked(candidates[i])))));
-            delete voters[voter];
+            hasVoted[voter] = false;
         }
+    }
 
-        // Reset votes mapping
-        for (uint i = 0; i < candidates.length; i++) {
-            delete votes[candidates[i]];
-        }
+    function removeCandidate(string memory candidate) external OnlyOwner {
+        // require(candidates.remove(candidate), "Candidate not found");
+    }
 
-        // Reset hasVoted mapping
-        for (uint i = 0; i < candidates.length; i++) {
-            address voter = address(uint160(uint256(keccak256(abi.encodePacked(candidates[i])))));
-            delete hasVoted[voter];
-        }
+    function addCandidate(string memory candidate) external OnlyOwner {
+        // require(candidates.remove(candidate), "Candidate not found");
     }
 }
